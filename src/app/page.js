@@ -11,6 +11,7 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
+  const [zip, setZip] = useState('');
   const [tab, setTab] = useState('find');
   const [voted, setVoted] = useState({});
   const [toast, setToast] = useState(null);
@@ -69,9 +70,10 @@ export default function Home() {
     return businesses.filter((b) => {
       const matchQ = !q || b.name.toLowerCase().includes(q) || b.category.toLowerCase().includes(q);
       const matchCat = category === 'All' || b.category === category;
-      return matchQ && matchCat;
+      const matchZip = !zip || b.zip_code === zip;
+      return matchQ && matchCat && matchZip;
     });
-  }, [businesses, query, category]);
+  }, [businesses, query, category, zip]);
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
@@ -95,6 +97,13 @@ export default function Home() {
               placeholder="Search businesses…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+            />
+            <input
+              className="w-full sm:w-32 px-4 py-2.5 rounded-lg border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/30"
+              placeholder="Zip code"
+              maxLength={5}
+              value={zip}
+              onChange={(e) => setZip(e.target.value.replace(/\D/g, ''))}
             />
             <select
               className="px-4 py-2.5 rounded-lg border border-black/10 bg-white"
