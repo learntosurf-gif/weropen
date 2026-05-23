@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { deriveStatus, labelFor, getReporterToken } from '@/lib/status';
 
 const CATEGORIES = ['All', 'Grocery', 'Restaurant', 'Pharmacy', 'Gas Station', 'Coffee'];
+const PAGE_SIZE = 24;
 
 export default function Home() {
   const [businesses, setBusinesses] = useState([]);
@@ -12,6 +13,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [zip, setZip] = useState('');
+  const [page, setPage] = useState(1);
   const [tab, setTab] = useState('find');
   const [voted, setVoted] = useState({});
   const [toast, setToast] = useState(null);
@@ -75,6 +77,12 @@ export default function Home() {
     });
   }, [businesses, query, category, zip]);
 
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [query, category, zip]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
       <Header />
@@ -124,12 +132,33 @@ export default function Home() {
           )}
 
           <div className="grid sm:grid-cols-2 gap-3">
-            {filtered.map((b) => (
+            {paginated.map((b) => (
               <BusinessCard key={b.id} business={b} voted={voted[b.id]} onVote={vote} />
             ))}
           </div>
           {!loading && filtered.length === 0 && (
             <p className="text-black/50 py-8 text-center">No businesses match your search.</p>
+          )}
+          {!loading && filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between mt-6">
+              <button
+                onClick={() => { setPage(p => p - 1); window.scrollTo(0, 0); }}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-lg border border-black/10 text-sm text-black/60 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              <span className="text-sm text-black/50">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <button
+                onClick={() => { setPage(p => p + 1); window.scrollTo(0, 0); }}
+                disabled={page === totalPages}
+                className="px-4 py-2 rounded-lg border border-black/10 text-sm text-black/60 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
+            </div>
           )}
         </>
       ) : (
