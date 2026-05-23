@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #1d9e75;
+  --brand-dark: #0f6e56;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: #f7f6f2;
+  color: #1a1a1a;
+}
+
+h1, h2, h3, .display {
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+}
