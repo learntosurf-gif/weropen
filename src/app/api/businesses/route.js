@@ -37,5 +37,7 @@ export async function GET() {
     reports: byBusiness[b.id] || [],
   }));
 
-  return NextResponse.json({ businesses: withReports });
+  return NextResponse.json({ businesses: withReports }, {
+    headers: { 'Cache-Control': 'no-store' },
+  });
 }
