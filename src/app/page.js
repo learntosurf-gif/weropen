@@ -17,14 +17,20 @@ export default function Home() {
   const [tab, setTab] = useState('find');
   const [voted, setVoted] = useState({});
   const [toast, setToast] = useState(null);
+  const [alert, setAlert] = useState(null);
 
   async function load() {
     try {
       setLoading(true);
-      const res = await fetch('/api/businesses');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load');
-      setBusinesses(data.businesses);
+      const [bizRes, alertRes] = await Promise.all([
+        fetch('/api/businesses'),
+        fetch('/api/alert'),
+      ]);
+      const bizData = await bizRes.json();
+      if (!bizRes.ok) throw new Error(bizData.error || 'Failed to load');
+      setBusinesses(bizData.businesses);
+      const alertData = await alertRes.json();
+      setAlert(alertData.alert);
       setError(null);
     } catch (e) {
       setError(e.message);
@@ -86,7 +92,7 @@ export default function Home() {
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
       <Header />
-      <AlertBanner />
+      <AlertBanner alert={alert} />
 
       <div className="flex gap-2 border-b border-black/10 mb-6">
         <TabButton active={tab === 'find'} onClick={() => setTab('find')}>
@@ -192,15 +198,15 @@ function Header() {
   );
 }
 
-function AlertBanner() {
+function AlertBanner({ alert }) {
+  if (!alert) return null;
+  const isWarning = alert.type === 'warning';
   return (
-    <div className="bg-amber-300/70 rounded-lg px-4 py-2.5 flex items-center gap-2.5 mb-6">
-      <span className="text-lg">❄️</span>
-      <p className="text-sm text-amber-950">
-        <strong>Ice Storm Warning — Austin, TX</strong>{' '}
-        <span className="font-normal">
-          Road conditions critical. Hours are affected. Reports below are community-sourced.
-        </span>
+    <div className={`${isWarning ? 'bg-amber-300/70' : 'bg-blue-100'} rounded-lg px-4 py-2.5 flex items-center gap-2.5 mb-6`}>
+      <span className="text-lg">{alert.emoji || (isWarning ? '⚠️' : 'ℹ️')}</span>
+      <p className={`text-sm ${isWarning ? 'text-amber-950' : 'text-blue-900'}`}>
+        <strong>{alert.title}</strong>
+        {alert.message && <span className="font-normal"> {alert.message}</span>}
       </p>
     </div>
   );
