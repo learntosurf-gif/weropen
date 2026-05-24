@@ -11,9 +11,22 @@ export function deriveStatus(business, reports) {
     };
   }
 
-  // Otherwise, infer from community reports.
-  const openVotes = reports.filter((r) => r.vote === 'open').length;
-  const closedVotes = reports.filter((r) => r.vote === 'closed').length;
+  // Deduplicate by reporter_token — each token's most recent vote wins.
+  // This prevents one source from inflating the count by flip-flopping or
+  // clearing localStorage between votes.
+  // Future enhancement: weight votes by "trusted reporter" status here.
+  const latestByToken = new Map();
+  for (const r of reports) {
+    const key = r.reporter_token || `anon-${r.id}`;
+    const existing = latestByToken.get(key);
+    if (!existing || new Date(r.created_at) > new Date(existing.created_at)) {
+      latestByToken.set(key, r);
+    }
+  }
+  const deduped = Array.from(latestByToken.values());
+
+  const openVotes   = deduped.filter((r) => r.vote === 'open').length;
+  const closedVotes = deduped.filter((r) => r.vote === 'closed').length;
   const total = openVotes + closedVotes;
 
   if (total === 0) {
@@ -25,7 +38,7 @@ export function deriveStatus(business, reports) {
   if (closedVotes > openVotes) {
     return { status: 'closed', reason: `${closedVotes} of ${total} say closed`, source: 'community' };
   }
-  return { status: 'uncertain', reason: 'Reports are mixed', source: 'community' };
+  return { status: 'uncertain', reason: 'Reports are mixed — check back', source: 'community' };
 }
 
 export function labelFor(status) {

@@ -20,7 +20,7 @@ export async function GET() {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: reports, error: repError } = await supabase
     .from('reports')
-    .select('business_id, vote, created_at')
+    .select('business_id, vote, created_at, reporter_token')
     .gte('created_at', since);
 
   if (repError) {
