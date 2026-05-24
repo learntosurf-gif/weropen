@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { deriveStatus, labelFor, getReporterToken } from '@/lib/status';
+import { deriveStatus, labelFor, timeAgo, getReporterToken } from '@/lib/status';
 
 const CATEGORIES = ['All', 'Grocery', 'Restaurant', 'Pharmacy', 'Gas Station', 'Coffee'];
 const PAGE_SIZE = 24;
@@ -243,8 +243,17 @@ function StatusBadge({ status }) {
 }
 
 function BusinessCard({ business, voted, onVote }) {
-  const { status, reason, source } = deriveStatus(business, business.reports || []);
-  const total = (business.reports || []).length;
+  const { status, reason, source, confidence, lastReportedAt, ownerIsStale, communityDisagrees, openVotes, closedVotes, total } =
+    deriveStatus(business, business.reports || []);
+  const ago = timeAgo(lastReportedAt);
+
+  const confidenceLabel = {
+    high:   { text: 'High confidence', color: 'text-green-700' },
+    medium: { text: 'Medium confidence', color: 'text-amber-700' },
+    low:    { text: 'Low confidence', color: 'text-black/40' },
+    mixed:  { text: 'Mixed reports', color: 'text-amber-700' },
+    none:   null,
+  }[confidence];
 
   return (
     <div className="bg-white border border-black/10 rounded-xl p-4">
@@ -259,11 +268,31 @@ function BusinessCard({ business, voted, onVote }) {
         <StatusBadge status={status} />
       </div>
 
-      <p className="text-xs text-black/60 mb-2">{reason}</p>
+      {/* Reason + recency */}
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs text-black/60">{reason}</p>
+        {ago && <span className="text-[10px] text-black/35 ml-2 shrink-0">{ago}</span>}
+      </div>
 
+      {/* Confidence indicator */}
+      {confidenceLabel && (
+        <p className={`text-[10px] mb-2 ${confidenceLabel.color}`}>
+          {confidenceLabel.text}
+        </p>
+      )}
+
+      {/* Owner note */}
       {business.owner_note && source === 'owner' && (
         <div className="text-xs text-black/60 bg-black/[0.03] rounded-md px-2.5 py-1.5 mb-2">
           {business.owner_note}
+        </div>
+      )}
+
+      {/* Owner staleness warning */}
+      {communityDisagrees && (
+        <div className="text-[11px] bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5 mb-2 text-amber-800">
+          ⚠️ Owner update is older than 24 h — {total} recent report{total !== 1 ? 's' : ''} suggest{total === 1 ? 's' : ''}{' '}
+          {openVotes > closedVotes ? 'open' : 'closed'}
         </div>
       )}
 
@@ -273,7 +302,7 @@ function BusinessCard({ business, voted, onVote }) {
 
       <div className="flex items-center justify-between border-t border-black/10 pt-2.5">
         <span className="text-xs text-black/50">
-          {total} report{total !== 1 ? 's' : ''}
+          {total} distinct report{total !== 1 ? 's' : ''}
         </span>
         <div className="flex gap-1.5">
           <button
